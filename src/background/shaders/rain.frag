@@ -3,6 +3,7 @@ uniform vec2 size;
 uniform vec2 direction;
 uniform float speed;
 uniform float density;
+uniform vec3 tint;
 
 #include util/fbm.frag;
 #include util/line.frag;
@@ -61,5 +62,5 @@ half4 main(float2 coord) {
     alpha += mist(p * 5.0 * tiling, baseSpeed + 5) * intensity;
   }
 
-  return vec4(1.0) * alpha * 0.5;
+  return vec4(tint, 1.0) * alpha * 0.5;
 }

@@ -3,6 +3,7 @@ uniform vec2 size;
 uniform vec2 direction;
 uniform float speed;
 uniform float density;
+uniform vec3 tint;
 
 #include util/fbm.frag;
 
@@ -42,5 +43,6 @@ half4 main(float2 coord) {
     alpha += sand(p * 0.5 * tiling, baseSpeed * 0.3 + 0.5, 0.2, 0.1, 0.2);
   }
 
-  return vec4(vec3(0.76, 0.52, 0.34), 1.0) * clamp(alpha, 0.0, 2.0);
+  vec3 originalColor = vec3(0.76, 0.52, 0.34);
+  return vec4(originalColor * tint, 1.0) * clamp(alpha, 0.0, 2.0);
 }

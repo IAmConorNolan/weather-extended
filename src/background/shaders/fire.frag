@@ -3,6 +3,7 @@ uniform vec2 size;
 uniform vec2 direction;
 uniform float speed;
 uniform float density;
+uniform vec3 tint;
 
 #include util/fbm.frag;
 #include util/line.frag;
@@ -14,7 +15,7 @@ vec3 fireColor(float x, float k) {
   return vec3(exp(-y * 0.1) + 0.2, exp(-y * 0.3), exp(-y * 0.7)) * (1.0 - exp(-x * k));
 }
 
-vec4 ember(vec2 p, float jitter, vec2 direction, float speed, float size, float lineLength) {
+float ember(vec2 p, float jitter, vec2 direction, float speed, float size, float lineLength) {
   // Move the input space in the given direction
   p += time * direction * speed * vec2(-1, 1);
   // Animate the rise of the ember
@@ -24,10 +25,10 @@ vec4 ember(vec2 p, float jitter, vec2 direction, float speed, float size, float 
   float scale = dot(minPoint, vec2(0.8, 0.8));
   float blur = size * 1.5;
   float line = 1.0 - smoothstep(size * scale - blur, size * scale + blur, minDist);
-  return vec4(line * fireColor(clamp(1.0 - minDist * 2.5, 0.0, 1.0), 100.0), line);
+  return line;
 }
 
-vec4 flame(vec2 p, float speed) {
+float flame(vec2 p, float speed) {
   // Animate the space in the given direction
   vec2 anim = direction * time * speed * vec2(-1, 1) * 2;
 
@@ -39,7 +40,7 @@ vec4 flame(vec2 p, float speed) {
   float fbm = fbm6(p + anim + q * 6.3);
   float alpha = clamp(pow(fbm * 0.5, 2.05), 0.0, 1.0);
 
-  return vec4(fireColor(alpha, 5.0), alpha);
+  return alpha;
 }
 
 half4 main(float2 coord) {
@@ -52,24 +53,25 @@ half4 main(float2 coord) {
   // Tile per 20 grid cells
   float tiling = max(size.x, size.y) / 150.0 / 20.0;
 
-  vec4 color = vec4(0.0);
+  float alpha = 0.0;
 
   // Overlap embers based on density
-  color += ember(p * 5.0 * tiling, 0.8, direction, baseSpeed * 0.2 + 0.2, 0.014, 0.25);
+  alpha += ember(p * 5.0 * tiling, 0.8, direction, baseSpeed * 0.2 + 0.2, 0.014, 0.25);
   if(density > 3) {
-    color += ember(p * 40.0 * tiling, 0.8, direction, baseSpeed * 0.25 + 2.5, 0.05, 1.0);
+    alpha += ember(p * 40.0 * tiling, 0.8, direction, baseSpeed * 0.25 + 2.5, 0.05, 1.0);
   } else if(density > 2) {
-    color += ember(p * 30.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 1.5, 0.04, 0.75);
+    alpha += ember(p * 30.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 1.5, 0.04, 0.75);
   } else if(density > 1) {
-    color += ember(p * 20.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 1.0, 0.03, 0.5);
+    alpha += ember(p * 20.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 1.0, 0.03, 0.5);
   } else {
-    color += ember(p * 10.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 0.5, 0.01, 0.25);
+    alpha += ember(p * 10.0 * tiling, 1.2, direction, baseSpeed * 0.25 + 0.5, 0.01, 0.25);
   }
 
   if(density > 2) {
     float intensity = density > 3 ? 0.8 : 0.4;
-    color += flame(p * 5.0 * tiling, baseSpeed * 0.1 + 0.5) * intensity;
+    alpha += flame(p * 5.0 * tiling, baseSpeed * 0.1 + 0.5) * intensity;
   }
 
-  return color;
+  vec3 originalColor = vec3(1.0, 0.4, 0.1); // Original fire orange
+  return vec4(originalColor * tint, 1.0) * alpha;
 }

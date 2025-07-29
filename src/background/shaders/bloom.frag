@@ -3,6 +3,7 @@ uniform vec2 size;
 uniform vec2 direction;
 uniform float speed;
 uniform float density;
+uniform vec3 tint;
 
 #include util/petal.frag
 
@@ -36,7 +37,8 @@ vec4 bloom(vec2 p, float jitter, float shapeJitter, vec2 direction, float speed,
   // Assign a random color based off this grid cell
   float colorRnd = hash12(minStaticPoint);
 
-  return vec4(alpha * bloomColor(colorRnd, smoothAlpha), alpha);
+  vec3 color = bloomColor(colorRnd, smoothAlpha);
+  return vec4(color * tint, alpha);
 }
 
 half4 main(float2 coord) {

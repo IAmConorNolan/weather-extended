@@ -32,6 +32,10 @@ import NorthWest from "@mui/icons-material/NorthWestRounded";
 import Button from "@mui/material/Button";
 import Paper, { PaperProps } from "@mui/material/Paper";
 import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Collapse from "@mui/material/Collapse";
+import { useRef } from "react";
 
 const SmallLabel = styled(FormLabel)({
   fontSize: "0.75rem",
@@ -242,6 +246,13 @@ function directionToLabel(dir: Direction): React.ReactNode {
 }
 
 function MenuControls({ items }: { items: Item[] }) {
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [hue, setHue] = useState(0);
+  const [saturation, setSaturation] = useState(100);
+  const [lightness, setLightness] = useState(50);
+  const colorCanvasRef = useRef<HTMLCanvasElement>(null);
+  const hueCanvasRef = useRef<HTMLCanvasElement>(null);
+  
   const config = useMemo<WeatherConfig>(() => {
     for (const item of items) {
       const config = getMetadata<WeatherConfig>(
@@ -254,11 +265,49 @@ function MenuControls({ items }: { items: Item[] }) {
     return { type: "SNOW" };
   }, [items]);
 
-  const values: Required<WeatherConfig> = {
+
+  // Utility functions for color conversion
+  const hslToHex = (h: number, s: number, l: number): string => {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  };
+
+  const hexToHsl = (hex: string): [number, number, number] => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    return [h * 360, s * 100, l * 100];
+  };
+
+
+  const values = {
     density: config.density ?? 3,
     direction: config.direction ?? { x: -1, y: -1 },
     speed: config.speed ?? 1,
     type: config.type,
+    tint: config.tint ?? "#ffffff",
   };
 
   async function handleConditionChange(value: WeatherConfig["type"]) {
@@ -305,6 +354,108 @@ function MenuControls({ items }: { items: Item[] }) {
       }
     });
   }
+
+  async function handleTintChange(value: string) {
+    await OBR.scene.items.updateItems(items, (items) => {
+      for (const item of items) {
+        const config = item.metadata[getPluginId("weather")];
+        if (isPlainObject(config)) {
+          config.tint = value === "#ffffff" ? undefined : value;
+        }
+      }
+    });
+  }
+
+  // Canvas drawing functions for color picker
+  useEffect(() => {
+    if (colorPickerOpen && colorCanvasRef.current && hueCanvasRef.current) {
+      drawColorCanvas();
+      drawHueCanvas();
+    }
+  }, [colorPickerOpen, hue]);
+
+  const drawColorCanvas = () => {
+    const canvas = colorCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Create saturation/lightness gradient
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
+        const s = (x / width) * 100;
+        const l = 100 - (y / height) * 100;
+        const color = hslToHex(hue, s, l);
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  };
+
+  const drawHueCanvas = () => {
+    const canvas = hueCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Create hue gradient
+    for (let y = 0; y < height; y++) {
+      const h = (y / height) * 360;
+      const color = hslToHex(h, 100, 50);
+      ctx.fillStyle = color;
+      ctx.fillRect(0, y, width, 1);
+    }
+  };
+
+  const handleColorCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = colorCanvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const s = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const l = Math.max(0, Math.min(100, 100 - (y / rect.height) * 100));
+    
+    setSaturation(s);
+    setLightness(l);
+    const newColor = hslToHex(hue, s, l);
+    handleTintChange(newColor);
+  };
+
+  const handleHueCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = hueCanvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const h = Math.max(0, Math.min(360, (y / 100) * 360));
+    
+    setHue(h);
+    const newColor = hslToHex(h, saturation, lightness);
+    handleTintChange(newColor);
+  };
+
+  // Initialize color picker state when opening
+  useEffect(() => {
+    if (colorPickerOpen) {
+      const [h, s, l] = hexToHsl(values.tint);
+      setHue(h);
+      setSaturation(s);
+      setLightness(l);
+    }
+  }, [colorPickerOpen, values.tint]);
+
+
 
   return (
     <Stack px={2} py={1}>
@@ -409,7 +560,7 @@ function MenuControls({ items }: { items: Item[] }) {
           </ToggleButtonGroup>
         </FormControl>
       </Stack>
-      <Stack gap={1} direction="row" sx={{ mb: 2 }} alignItems="center">
+      <Stack gap={1} direction="row" sx={{ mb: 1 }} alignItems="center">
         <FormControl fullWidth>
           <SmallLabel>Cover</SmallLabel>
           <ToggleButtonGroup
@@ -434,6 +585,202 @@ function MenuControls({ items }: { items: Item[] }) {
             </ToggleButton>
           </ToggleButtonGroup>
         </FormControl>
+      </Stack>
+      <Stack sx={{ mb: 2 }}>
+        <SmallLabel>Tint</SmallLabel>
+        <IconButton
+          onClick={() => setColorPickerOpen(!colorPickerOpen)}
+          sx={{
+            width: "100%",
+            height: 32,
+            backgroundColor: values.tint === "#ffffff" ? "rgba(255,255,255,0.05)" : values.tint,
+            border: "2px solid",
+            borderColor: values.tint === "#ffffff" ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
+            borderRadius: 1,
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            "&:hover": {
+              backgroundColor: values.tint === "#ffffff" ? "rgba(255,255,255,0.1)" : values.tint,
+              borderColor: "rgba(255,255,255,0.4)",
+              transform: "scale(1.02)",
+            },
+          }}
+        >
+          {values.tint === "#ffffff" && (
+            <Box sx={{
+              fontSize: "12px",
+              color: "rgba(255,255,255,0.6)",
+              fontWeight: "bold"
+            }}>
+              ×
+            </Box>
+          )}
+        </IconButton>
+        <Collapse in={colorPickerOpen}>
+          <Box sx={{ 
+            mt: 1, 
+            p: 1.5, 
+            border: "1px solid", 
+            borderColor: "rgba(255,255,255,0.15)", 
+            borderRadius: 1,
+            backgroundColor: "rgba(26, 32, 46, 0.95)",
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            width: "100%"
+          }}>
+            {/* Color Picker Area */}
+            <Box sx={{ display: "flex", gap: 1, mb: 1.5 }}>
+              {/* Saturation/Lightness Canvas */}
+              <Box sx={{ position: "relative", flex: 1 }}>
+                <canvas
+                  ref={colorCanvasRef}
+                  width={150}
+                  height={100}
+                  onClick={handleColorCanvasClick}
+                  style={{
+                    cursor: "crosshair",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "4px",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3)",
+                    width: "100%",
+                    height: "100px"
+                  }}
+                />
+                {/* Crosshair indicator */}
+                <Box sx={{
+                  position: "absolute",
+                  left: `calc(${saturation}% - 3px)`,
+                  top: `calc(${100 - lightness}% - 3px)`,
+                  width: 6,
+                  height: 6,
+                  border: "1px solid #ffffff",
+                  borderRadius: "50%",
+                  pointerEvents: "none",
+                  boxShadow: "0 0 2px rgba(0,0,0,0.6)"
+                }} />
+              </Box>
+
+              {/* Hue Slider Canvas */}
+              <Box sx={{ position: "relative" }}>
+                <canvas
+                  ref={hueCanvasRef}
+                  width={16}
+                  height={100}
+                  onClick={handleHueCanvasClick}
+                  style={{
+                    cursor: "crosshair",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "4px",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3)"
+                  }}
+                />
+                {/* Hue indicator */}
+                <Box sx={{
+                  position: "absolute",
+                  left: -1,
+                  top: `${(hue / 360) * 100 - 1}px`,
+                  width: 18,
+                  height: 2,
+                  border: "1px solid #ffffff",
+                  borderRadius: "1px",
+                  pointerEvents: "none",
+                  boxShadow: "0 0 2px rgba(0,0,0,0.6)"
+                }} />
+              </Box>
+
+              {/* Color Preview */}
+              <Box sx={{
+                width: 28,
+                height: 100,
+                backgroundColor: values.tint === "#ffffff" ? "rgba(255,255,255,0.05)" : values.tint,
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "4px",
+                boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3)",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                {values.tint === "#ffffff" && (
+                  <Box sx={{
+                    fontSize: "14px",
+                    color: "rgba(255,255,255,0.6)",
+                    fontWeight: "bold"
+                  }}>
+                    ×
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* Hex Input and Clear Button */}
+            <Stack direction="row" spacing={0.5} alignItems="flex-end">
+              <TextField
+                size="small"
+                label="Hex"
+                value={values.tint === "#ffffff" ? "" : values.tint}
+                placeholder="No tint"
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  if (/^#[0-9A-F]{0,6}$/i.test(value)) {
+                    if (value.length === 7) {
+                      const [h, s, l] = hexToHsl(value);
+                      setHue(h);
+                      setSaturation(s);
+                      setLightness(l);
+                      handleTintChange(value);
+                    }
+                  }
+                }}
+                sx={{
+                  flex: 1,
+                  "& .MuiInputBase-input": {
+                    fontSize: "0.7rem",
+                    padding: "4px 8px",
+                    textAlign: "center"
+                  },
+                  "& .MuiInputLabel-root": {
+                    fontSize: "0.65rem",
+                    color: "rgba(255,255,255,0.7)",
+                  },
+                }}
+              />
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={async () => {
+                  await OBR.scene.items.updateItems(items, (items) => {
+                    for (const item of items) {
+                      const config = item.metadata[getPluginId("weather")];
+                      if (isPlainObject(config)) {
+                        delete config.tint;
+                      }
+                    }
+                  });
+                  setHue(0);
+                  setSaturation(0);
+                  setLightness(100);
+                  setColorPickerOpen(false);
+                }}
+                sx={{
+                  minWidth: "auto",
+                  px: 1,
+                  fontSize: "0.65rem",
+                  color: "rgba(255,255,255,0.7)",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  "&:hover": {
+                    borderColor: "rgba(255,255,255,0.5)",
+                    backgroundColor: "rgba(255,255,255,0.05)"
+                  }
+                }}
+              >
+                Clear
+              </Button>
+            </Stack>
+          </Box>
+        </Collapse>
       </Stack>
       <Button
         size="small"

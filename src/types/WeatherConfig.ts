@@ -5,4 +5,5 @@ export interface WeatherConfig {
   speed?: number;
   direction?: Vector2;
   density?: number;
+  tint?: string;
 }

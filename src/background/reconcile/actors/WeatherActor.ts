@@ -88,6 +88,7 @@ export class WeatherActor extends Actor {
       { name: "direction", value: config.direction ?? { x: -1, y: -1 } },
       { name: "speed", value: config.speed ?? 1 },
       { name: "density", value: config.density ?? 3 },
+      { name: "tint", value: this.hexToRgb(config.tint ?? "#ffffff") },
     ];
 
     const sksl = this.getSkslFromConfig(config);
@@ -96,6 +97,18 @@ export class WeatherActor extends Actor {
     }
 
     return effect;
+  }
+
+  private hexToRgb(hex: string): { x: number; y: number; z: number } {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) {
+      return { x: 1, y: 1, z: 1 };
+    }
+    return {
+      x: parseInt(result[1], 16) / 255,
+      y: parseInt(result[2], 16) / 255,
+      z: parseInt(result[3], 16) / 255,
+    };
   }
 
   private applyWeatherLayer(effect: Effect, parent: Item) {

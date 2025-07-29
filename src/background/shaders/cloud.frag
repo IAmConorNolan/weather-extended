@@ -3,6 +3,7 @@ uniform vec2 size;
 uniform vec2 direction;
 uniform float speed;
 uniform float density;
+uniform vec3 tint;
 
 #include util/fbm.frag;
 
@@ -42,5 +43,5 @@ half4 main(float2 coord) {
     alpha += cloud(p * 1.2 * tiling, baseSpeed * 0.3 + 0.25, 0.05, 0.1, 0.2) * 0.5;
   }
 
-  return vec4(vec3(1.0, 1.0, 1.0), 1.0) * clamp(alpha, 0.0, 1.5);
+  return vec4(tint, 1.0) * clamp(alpha, 0.0, 1.5);
 }
