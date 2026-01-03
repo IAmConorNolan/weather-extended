@@ -1,8 +1,27 @@
 # Weather Extended
 
-An Owlbear Rodeo extension to add weather like rain and snow to your maps
+An extended fork of the [Owlbear Rodeo Weather extension](https://github.com/owlbear-rodeo/weather) with additional weather types and customization options.
 
-## Installation
+## ✨ Features
+
+### Weather Types
+Choose from 8 different weather effects:
+- ❄️ **Snow** - Classic snowfall
+- 🌧️ **Rain** - Rainfall
+- 🏜️ **Sand** - Sandstorm
+- 🔥 **Fire** - Embers and sparks
+- ☁️ **Cloud** - Fog and mist
+- 🌸 **Bloom** - Falling petals
+- ⚡ **Energy Storm** - Mystical energy particles
+- 💧 **Water** - Underwater bubbles
+
+### Customization Options
+- **Wind Direction**: 8-directional control (N, NE, E, SE, S, SW, W, NW)
+- **Wind Speed**: Adjust particle velocity
+- **Coverage/Density**: Control how heavy the weather effect is
+- **Color Tint**: Custom color picker with HSL controls for unique effects
+
+## 🚀 Installation
 
 To install this extension in Owlbear Rodeo:
 
@@ -12,17 +31,26 @@ To install this extension in Owlbear Rodeo:
 4. Enter the manifest URL: `https://iamconornolan.github.io/weather-extended/manifest.json`
 5. Click "Add Extension"
 
-## Development
+## 📖 Usage
+
+1. Select a map item (you may need to double-click locked maps)
+2. Right-click to open the context menu
+3. Click **"Add Weather"** to add a default snow effect
+4. Click **"Weather Settings"** to customize the effect
+
+## 🛠️ Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## License
+## 📝 License
 
 GNU GPLv3
 
-Based on the original Weather extension by Owlbear Rodeo.
+## 🙏 Credits
 
-Copyright (C) 2024 Owlbear Rodeo
+This is an extended fork of the original [Weather extension](https://github.com/owlbear-rodeo/weather) by [Owlbear Rodeo](https://www.owlbear.rodeo).
+
+Original Copyright (C) 2024 Owlbear Rodeo
