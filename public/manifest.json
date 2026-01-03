@@ -4,7 +4,7 @@
   "manifest_version": 1,
   "author": "Conor Nolan",
   "homepage_url": "https://github.com/IAmConorNolan/weather-extended",
-  "icon": "logo.png",
+  "icon": "https://iamconornolan.github.io/weather-extended/logo.png",
   "description": "Choose from a huge number of customizable weathers for your maps.",
-  "background_url": "background.html"
+  "background_url": "https://iamconornolan.github.io/weather-extended/background.html"
 }
