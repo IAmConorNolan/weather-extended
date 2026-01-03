@@ -55,7 +55,7 @@ export function createWeatherMenu() {
       },
     ],
     embed: {
-      url: "/menu.html",
+      url: `${import.meta.env.BASE_URL}menu.html`,
       height: 263,
     },
   });
