@@ -5,6 +5,7 @@ import glsl from "vite-plugin-glsl";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: "/weather-extended/",
   plugins: [react(), glsl()],
   build: {
     assetsInlineLimit: 0,
