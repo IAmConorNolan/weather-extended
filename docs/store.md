@@ -1,14 +1,13 @@
 ---
-title: Weather
+title: Weather Extended
 description: Add weather like rain and snow to your maps
-author: Owlbear Rodeo
-image: https://raw.githubusercontent.com/owlbear-rodeo/weather/main/docs/header.jpg
-icon: https://weather.owlbear.rodeo/logo.png
+author: Conor Nolan
+image: https://raw.githubusercontent.com/IAmConorNolan/weather-extended/main/docs/header.jpg
+icon: https://iamconornolan.github.io/weather-extended/logo.png
 tags:
-  - built-by-owlbear
   - content-pack
-manifest: https://weather.owlbear.rodeo/manifest.json
-learn-more: https://extensions.owlbear.rodeo/weather
+manifest: https://iamconornolan.github.io/weather-extended/manifest.json
+learn-more: https://github.com/IAmConorNolan/weather-extended
 ---
 
 # Weather
