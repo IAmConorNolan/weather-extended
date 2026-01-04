@@ -481,6 +481,9 @@ function MenuControls({ items }: { items: Item[] }) {
             <MenuItem value="FIRE">Fire</MenuItem>
             <MenuItem value="CLOUD">Cloud</MenuItem>
             <MenuItem value="BLOOM">Bloom</MenuItem>
+            <MenuItem value="ENERGYSTORM">Energy Storm</MenuItem>
+            <MenuItem value="WATER">Water</MenuItem>
+            <MenuItem value="CURRENT">Current</MenuItem>
           </Select>
         </FormControl>
         <FormControl fullWidth>

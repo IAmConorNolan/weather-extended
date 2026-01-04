@@ -11,6 +11,9 @@ import fire from "../../shaders/fire.frag";
 import sand from "../../shaders/sand.frag";
 import cloud from "../../shaders/cloud.frag";
 import bloom from "../../shaders/bloom.frag";
+import energystorm from "../../shaders/energystorm.frag";
+import water from "../../shaders/water.frag";
+import current from "../../shaders/current.frag";
 
 export class WeatherActor extends Actor {
   // ID of the current effect item
@@ -78,6 +81,12 @@ export class WeatherActor extends Actor {
       return cloud;
     } else if (config.type === "BLOOM") {
       return bloom;
+    } else if (config.type === "ENERGYSTORM") {
+      return energystorm;
+    } else if (config.type === "WATER") {
+      return water;
+    } else if (config.type === "CURRENT") {
+      return current;
     } else {
       return snow;
     }
